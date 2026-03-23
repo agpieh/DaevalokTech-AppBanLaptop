@@ -1,50 +1,13 @@
-# Welcome to your Expo app 👋
+##  Thông tin sinh viên
+- **Họ và tên:** Trần Đại Hiệp
+- **Mã sinh viên:** 21810310632
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Cấu trúc Màn hình (Screens)
+1. `index.tsx` (Splash Screen - Auto Navigation)![text](z7648042562782_fbf4997c50c5ab9a2fac7bd580b88f97.jpg)
+2. `onboarding.tsx` ![alt text](z7648042877993_4fc5fcd8bfbd29f052d94c232ece3c77.jpg)
+3. `welcome.tsx` (Auth Landing)![alt text](z7648042519821_e1ea7e58d1ad45ac0bf76f81f855d49e.jpg)
+4. `phone.tsx` (Phone Input)![alt text](z7648042534803_47c59017e708b2b9ace7c89830731e3e.jpg)
+5. `verify.tsx` (OTP Verification)![alt text](z7648040907872_56fbe7d3631589e80ecd85cd636be32f.jpg)
+6. `login.tsx` (Email/Pass Login)![alt text](z7648042461653_4e99c7d7f0e405ce37da37eaf4761a69.jpg)
+7. `signup.tsx` (Sign Up form with Terms of Service)![alt text](z7648042555687_830459fa4f45389284fb3a92b64bcd9f.jpg)
+8. `location.tsx` (Select Area/Zone)![alt text](z7648043666783_ad70ee6e6786630e6554428a3edfe61f.jpg)
