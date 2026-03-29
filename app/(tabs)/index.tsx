@@ -1,98 +1,141 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'; // 👉 Thêm dòng này nếu chưa có
+import React from 'react';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Colors from '../../constants/Colors';
+// Component Thẻ Sản Phẩm (Dọc)
+// Component Thẻ Sản Phẩm (Dọc)
+const ProductCard = ({ title, weight, price, imageSource }: any) => {
+  const router = useRouter(); // 👉 Khởi tạo router ở đây
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+  return (
+    <TouchableOpacity 
+      style={styles.cardContainer} 
+      activeOpacity={0.8}
+      onPress={() => router.push('/product-detail')} // 👉 Gắn lệnh bay sang trang Detail
+    >
+      <Image source={imageSource} style={styles.cardImage} resizeMode="contain" />
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardWeight}>{weight}</Text>
+      <View style={styles.cardBottomRow}>
+        <Text style={styles.cardPrice}>${price}</Text>
+        <TouchableOpacity style={styles.addButton}>
+          <Ionicons name="add" size={24} color={Colors.white} />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// 👉 Component MỚI: Thẻ Danh Mục (Ngang) dùng cho phần Groceries
+const CategoryCard = ({ name, imageSource, backgroundColor }: any) => (
+  <TouchableOpacity style={[styles.categoryCard, { backgroundColor }]} activeOpacity={0.8}>
+    <Image source={imageSource} style={styles.categoryImage} resizeMode="contain" />
+    <Text style={styles.categoryName}>{name}</Text>
+  </TouchableOpacity>
+);
+
+// Component Tiêu đề Danh mục 
+const SectionHeader = ({ title }: { title: string }) => (
+  <View style={styles.sectionHeader}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <TouchableOpacity>
+      <Text style={styles.seeAllText}>See all</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        
+        {/* Header: Logo & Vị trí */}
+        <View style={styles.header}>
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
+          <View style={styles.locationContainer}>
+            <Ionicons name="location-sharp" size={20} color="#4C4F4D" />
+            <Text style={styles.locationText}>Dhaka, Banassre</Text>
+          </View>
+        </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Thanh tìm kiếm */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={22} color={Colors.textLight} />
+          <TextInput style={styles.searchInput} placeholder="Search Store" placeholderTextColor={Colors.textLight} />
+        </View>
+
+        {/* Banner */}
+        <View style={styles.bannerContainer}>
+          <Image source={require('../../assets/images/banner.png')} style={styles.banner} resizeMode="cover" />
+        </View>
+
+        {/* Khu vực 1: Exclusive Offer */}
+        <SectionHeader title="Exclusive Offer" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          <ProductCard title="Organic Bananas" weight="7pcs, Priceg" price="4.99" imageSource={require('../../assets/images/banana.png')} />
+          <ProductCard title="Red Apple" weight="1kg, Priceg" price="4.99" imageSource={require('../../assets/images/apple.png')} />
+        </ScrollView>
+
+        {/* Khu vực 2: Best Selling */}
+        <SectionHeader title="Best Selling" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          <ProductCard title="Bell Pepper Red" weight="1kg, Priceg" price="4.99" imageSource={require('../../assets/images/pepper.png')} />
+          <ProductCard title="Ginger" weight="250gm, Priceg" price="4.99" imageSource={require('../../assets/images/ginger.png')} />
+        </ScrollView>
+
+        {/* 👉 Khu vực 3 (MỚI): Groceries */}
+        <SectionHeader title="Groceries" />
+        
+        {/* Dải Thẻ Danh mục (Nền màu) */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          <CategoryCard name="Pulses" backgroundColor="#F8EEDB" imageSource={require('../../assets/images/pulses.png')} />
+          <CategoryCard name="Rice" backgroundColor="#E1F3E9" imageSource={require('../../assets/images/rice.png')} />
+        </ScrollView>
+
+        {/* Dải Thẻ Sản phẩm Tạp hóa */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          <ProductCard title="Beef Bone" weight="1kg, Priceg" price="4.99" imageSource={require('../../assets/images/beef.png')} />
+          <ProductCard title="Broiler Chicken" weight="1kg, Priceg" price="4.99" imageSource={require('../../assets/images/chicken.png')} />
+        </ScrollView>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  container: { flex: 1, backgroundColor: Colors.white },
+  scrollContent: { paddingBottom: 30 },
+  
+  header: { alignItems: 'center', marginTop: 40, marginBottom: 20 },
+  logo: { width: 30, height: 35, marginBottom: 10 },
+  locationContainer: { flexDirection: 'row', alignItems: 'center' },
+  locationText: { fontSize: 16, color: '#4C4F4D', fontWeight: '600', marginLeft: 5 },
+  
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F3F2', borderRadius: 15, paddingHorizontal: 15, height: 50, marginHorizontal: 20, marginBottom: 20 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: Colors.textDark },
+  
+  bannerContainer: { marginHorizontal: 20, marginBottom: 30, borderRadius: 15, overflow: 'hidden' },
+  banner: { width: '100%', height: 115 }, 
+  
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginBottom: 15 },
+  sectionTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.textDark },
+  seeAllText: { fontSize: 16, color: Colors.primary, fontWeight: '600' },
+  
+  horizontalScroll: { paddingLeft: 20, marginBottom: 30 },
+  
+  // Style cho Thẻ Sản Phẩm Dọc
+  cardContainer: { width: 170, padding: 15, backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: '#E2E2E2', marginRight: 15 },
+  cardImage: { width: '100%', height: 80, marginBottom: 15 },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.textDark, marginBottom: 5 },
+  cardWeight: { fontSize: 14, color: Colors.textLight, marginBottom: 15 },
+  cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardPrice: { fontSize: 18, fontWeight: 'bold', color: Colors.textDark },
+  addButton: { width: 45, height: 45, backgroundColor: Colors.primary, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+
+  // 👉 Style MỚI cho Thẻ Danh Mục Ngang (Groceries)
+  categoryCard: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 15, borderRadius: 18, width: 250, marginRight: 15 },
+  categoryImage: { width: 70, height: 70, marginRight: 15 },
+  categoryName: { fontSize: 20, fontWeight: '600', color: Colors.textDark }
 });

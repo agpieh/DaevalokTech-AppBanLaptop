@@ -36,7 +36,7 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.forgotPassword}>
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.loginButton} onPress={() => alert('Đăng nhập thành công!')}>
+        <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/(tabs)')}>
           <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity>
         <View style={styles.signupContainer}>
