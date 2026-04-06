@@ -34,6 +34,10 @@ export default function TabsLayout() {
         name="account" 
         options={{ title: 'Account', tabBarIcon: ({color}) => <Ionicons name="person-outline" size={24} color={color} /> }} 
       />
+      <Tabs.Screen 
+        name="search" 
+        options={{ href: null }} 
+      />
     </Tabs>
   );
 }
