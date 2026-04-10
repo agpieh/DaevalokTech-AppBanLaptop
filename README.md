@@ -2,9 +2,7 @@
 - **Họ và tên:** Trần Đại Hiệp
 - **Mã sinh viên:** 21810310632
 
-# Cấu trúc Màn hình Giai đoạn 3
-1. search: ![alt text](4_6_26/z7695306159249_7964b20658ad1ae6df9bcd01753508b1.jpg)    
-  ![alt text](4_6_26/z7695306431369_52726aad4bd1d475bd124d46e5c921c9.jpg)
-2. Filter: ![alt text](4_6_26/z7695305586814_5e19925b8197bb25cd190086f79f2016.jpg)
-3. Cart: ![alt text](4_6_26/z7695306128376_006f440cfc90bd888e7ffafdaaf53442.jpg) 
-4. Fav:![alt text](4_6_26/z7695305290937_da8e411bb7471291b25f97014347add9.jpg)
+![text](41026/z7709603639595_644e526769f1f5e7db35ea24d459168b.jpg)
+![text](41026/z7709603668632_5bf3cbd598cd75254aafad870c475c6b.jpg) 
+![text](41026/z7709603648735_eeb2add7e8c06958076dd33afbc13e79.jpg) 
+![text](41026/z7709603653408_1b163adc73ba7deeadbcc21ad000016c.jpg)
