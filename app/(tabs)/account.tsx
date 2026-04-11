@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router'; // 👉 Thêm router để chuyển trang
+import React, { useEffect, useState } from 'react'; // 👉 Thêm useEffect, useState
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
+import { storageService } from '../../services/storageService'; // 👉 Import storage
 
 const AccountItem = ({ icon, title }: { icon: string; title: string }) => (
   <TouchableOpacity style={styles.itemRow}>
@@ -14,6 +16,41 @@ const AccountItem = ({ icon, title }: { icon: string; title: string }) => (
 );
 
 export default function AccountScreen() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+
+  // 👉 Tự động load thông tin user từ Storage khi mở màn hình
+  useEffect(() => {
+    const loadUserData = async () => {
+      const savedUser = await storageService.getUser();
+      if (savedUser) {
+        setUser(savedUser);
+      }
+    };
+    loadUserData();
+  }, []);
+
+  // 👉 ĐỊNH NGHĨA HÀM LOGOUT BỊ THIẾU
+  const handleLogout = () => {
+    Alert.alert(
+      "Đăng xuất",
+      "Bạn có chắc chắn muốn thoát không?",
+      [
+        { text: "Hủy", style: "cancel" },
+        { 
+          text: "Đăng xuất", 
+          style: "destructive",
+          onPress: async () => {
+            // 1. Xóa dữ liệu user khỏi bộ nhớ
+            await storageService.removeUser();
+            // 2. Bay thẳng ra màn Login
+            router.replace('/login');
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -22,10 +59,12 @@ export default function AccountScreen() {
           <Image source={require('../../assets/images/User-1.jpg')} style={styles.avatar} />
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              <Text style={styles.nameText}>Afsar Hossen</Text>
+              {/* 👉 Hiển thị tên động từ AsyncStorage (hoặc tên mặc định nếu lỗi) */}
+              <Text style={styles.nameText}>{user ? user.name : 'Đại Hiệp'}</Text>
               <Ionicons name="pencil" size={16} color={Colors.primary} />
             </View>
-            <Text style={styles.emailText}>imsorawo@awdad.com</Text>
+            {/* 👉 Hiển thị email động */}
+            <Text style={styles.emailText}>{user ? user.email : '21810310632@epu.edu.vn'}</Text>
           </View>
         </View>
 
@@ -42,8 +81,8 @@ export default function AccountScreen() {
         </View>
 
         {/* Log Out Button */}
-        <TouchableOpacity style={styles.logoutButton}>
-          <Ionicons name="log-out-outline" size={22} color={Colors.primary} />
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color={Colors.primary} />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>

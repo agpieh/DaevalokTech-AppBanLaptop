@@ -1,14 +1,49 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'; // 👉 Đã thêm Alert
 import Colors from '../constants/Colors';
+import { storageService } from '../services/storageService'; // 👉 Đã thêm import storageService
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // 👉 HÀM XỬ LÝ ĐĂNG NHẬP MỚI
+  const handleLogin = async () => {
+    // 1. Kiểm tra không được để trống
+    if (!email || !password) {
+      Alert.alert('Thông báo', 'Vui lòng nhập Email và Password!');
+      return;
+    }
+
+    try {
+      // 2. Tạo dữ liệu User giả lập để lưu (Có chứa Tên và MSSV của bạn)
+      const userData = {
+        name: 'Trần Đại Hiệp',
+        msv: '21810310632',
+        email: email,
+        token: 'fake-jwt-token-123'
+      };
+
+      // 3. Lưu vào AsyncStorage
+      await storageService.saveUser(userData);
+
+      // 4. Báo thành công và chuyển trang
+      Alert.alert('Thành công', `Chào mừng ${userData.name}!`, [
+        { 
+          text: 'OK', 
+          onPress: () => router.replace('/(tabs)') 
+        }
+      ]);
+
+    } catch (error) {
+      console.error('Lỗi đăng nhập:', error);
+      Alert.alert('Lỗi', 'Có lỗi xảy ra khi lưu thông tin đăng nhập.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,9 +71,12 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.forgotPassword}>
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/(tabs)')}>
+        
+        {/* 👉 ĐÃ SỬA NÚT LOG IN ĐỂ GỌI HÀM handleLogin */}
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity>
+
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -53,28 +91,20 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
   scrollContent: { paddingHorizontal: 25, paddingBottom: 40 },
-  
-  // 👉 Đã tăng marginTop từ 30 lên 40 ở đây
   logoContainer: { alignItems: 'center', marginTop: 50, marginBottom: 50 }, 
   logo: { width: 50, height: 55 }, 
-  
   header: { marginBottom: 40 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textDark, marginBottom: 10 },
   subtitle: { fontSize: 16, color: Colors.textLight },
-  
   inputGroup: { marginBottom: 30 },
   label: { fontSize: 16, color: Colors.textLight, fontWeight: '600', marginBottom: 10 },
   input: { fontSize: 18, color: Colors.textDark, borderBottomWidth: 1, borderBottomColor: '#E2E2E2', paddingBottom: 10 },
-  
   passwordContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E2E2', paddingBottom: 10 },
   passwordInput: { flex: 1, fontSize: 18, color: Colors.textDark },
-  
   forgotPassword: { alignItems: 'flex-end', marginBottom: 30 },
   forgotText: { fontSize: 14, color: Colors.textDark, fontWeight: '500' },
-  
   loginButton: { backgroundColor: Colors.primary, width: '100%', height: 67, borderRadius: 19, justifyContent: 'center', alignItems: 'center', shadowColor: '#53B175', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5, marginBottom: 25 },
   loginButtonText: { color: Colors.white, fontSize: 18, fontWeight: 'bold' },
-  
   signupContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   signupText: { fontSize: 14, color: Colors.textDark, fontWeight: '600' },
   signupLink: { fontSize: 14, color: Colors.primary, fontWeight: 'bold' }
