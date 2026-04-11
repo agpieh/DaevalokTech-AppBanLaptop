@@ -70,7 +70,14 @@ export default function AccountScreen() {
 
         {/* List Items */}
         <View style={styles.listContainer}>
-          <AccountItem icon="bag-handle-outline" title="Orders" />
+          <TouchableOpacity style={styles.itemRow} onPress={() => router.push('../orders')}>
+            <View style={styles.itemLeft}>
+              <Ionicons name="bag-handle-outline" size={22} color={Colors.textDark} />
+              <Text style={styles.itemTitle}>Orders</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textDark} />
+          </TouchableOpacity>
+
           <AccountItem icon="card-outline" title="My Details" />
           <AccountItem icon="location-outline" title="Delivery Address" />
           <AccountItem icon="wallet-outline" title="Payment Methods" />

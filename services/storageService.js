@@ -3,71 +3,93 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEYS = {
   USER: '@user_data',
   CART: '@cart_data',
-  ORDERS: '@orders_data'
+  ORDERS: '@orders_data',
 };
 
 export const storageService = {
-  // --- 1. AUTHENTICATION ---
+  // ==============================
+  // 1. AUTH (XÁC THỰC)
+  // ==============================
   saveUser: async (userData) => {
     try {
       await AsyncStorage.setItem(KEYS.USER, JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error saving user:', error);
+    } catch (e) {
+      console.error('Lỗi lưu user:', e);
     }
   },
   getUser: async () => {
     try {
-      const user = await AsyncStorage.getItem(KEYS.USER);
-      return user ? JSON.parse(user) : null;
-    } catch (error) {
-      console.error('Error getting user:', error);
+      const jsonValue = await AsyncStorage.getItem(KEYS.USER);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch(e) {
+      console.error('Lỗi đọc user:', e);
       return null;
     }
   },
   removeUser: async () => {
     try {
-      // Xóa user và xóa luôn giỏ hàng cho sạch sẽ khi logout
       await AsyncStorage.removeItem(KEYS.USER);
+      // Xóa luôn giỏ hàng khi đăng xuất cho sạch
       await AsyncStorage.removeItem(KEYS.CART); 
-    } catch (error) {
-      console.error('Error removing user:', error);
+    } catch(e) {
+      console.error('Lỗi xóa user:', e);
     }
   },
 
-  // --- 2. CART ---
+  // ==============================
+  // 2. CART (GIỎ HÀNG)
+  // ==============================
   saveCart: async (cartItems) => {
     try {
       await AsyncStorage.setItem(KEYS.CART, JSON.stringify(cartItems));
-    } catch (error) {
-      console.error('Error saving cart:', error);
+    } catch (e) {
+      console.error('Lỗi lưu giỏ hàng:', e);
     }
   },
   getCart: async () => {
     try {
-      const cart = await AsyncStorage.getItem(KEYS.CART);
-      return cart ? JSON.parse(cart) : [];
-    } catch (error) {
-      console.error('Error getting cart:', error);
+      const jsonValue = await AsyncStorage.getItem(KEYS.CART);
+      return jsonValue != null ? JSON.parse(jsonValue) : [];
+    } catch(e) {
+      console.error('Lỗi đọc giỏ hàng:', e);
       return [];
     }
   },
-
-  // --- 3. ORDERS ---
-  saveOrder: async (newOrder) => {
+  // 👉 ĐÂY LÀ HÀM BẠN ĐANG THIẾU
+  clearCart: async () => {
     try {
-      const existingOrders = await storageService.getOrders();
-      const updatedOrders = [newOrder, ...existingOrders]; // Đẩy đơn mới lên đầu
-      await AsyncStorage.setItem(KEYS.ORDERS, JSON.stringify(updatedOrders));
-    } catch (error) {
-      console.error('Error saving order:', error);
+      await AsyncStorage.removeItem(KEYS.CART);
+    } catch(e) {
+      console.error('Lỗi xóa giỏ hàng:', e);
     }
   },
+
+  // ==============================
+  // 3. ORDERS (ĐƠN HÀNG)
+  // ==============================
+  saveOrder: async (newOrder) => {
+    try {
+      // 1. Lấy dữ liệu thô từ storage trước
+      const jsonValue = await AsyncStorage.getItem(KEYS.ORDERS);
+      const existingOrders = jsonValue != null ? JSON.parse(jsonValue) : [];
+      
+      // 2. Thêm đơn mới vào đầu mảng
+      const updatedOrders = [newOrder, ...existingOrders];
+      
+      // 3. Lưu lại
+      await AsyncStorage.setItem(KEYS.ORDERS, JSON.stringify(updatedOrders));
+      console.log("✅ Đã lưu đơn hàng mới vào Storage");
+    } catch (e) {
+      console.error('❌ Lỗi khi saveOrder:', e);
+    }
+  },
+
   getOrders: async () => {
     try {
-      const orders = await AsyncStorage.getItem(KEYS.ORDERS);
-      return orders ? JSON.parse(orders) : [];
-    } catch (error) {
-      console.error('Error getting orders:', error);
+      const jsonValue = await AsyncStorage.getItem(KEYS.ORDERS);
+      return jsonValue != null ? JSON.parse(jsonValue) : [];
+    } catch(e) {
+      console.error('❌ Lỗi khi getOrders:', e);
       return [];
     }
   }
