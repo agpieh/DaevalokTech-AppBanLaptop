@@ -2,6 +2,8 @@
 - **Họ và tên:** Trần Đại Hiệp
 - **Mã sinh viên:** 21810310632
 
+LINK DEMO: https://drive.google.com/file/d/1p1p2-IYbaUWPYUd_0ScEf6zuKhGiE2EY/view?usp=sharing
+
 
 1. AsyncStorage hoạt động như thế nào?
 AsyncStorage là một hệ thống lưu trữ dữ liệu dạng Key-Value (Cặp Khóa-Giá trị) không đồng bộ (asynchronous) và không mã hóa. Nó lưu trữ dữ liệu trực tiếp trên bộ nhớ vật lý của thiết bị di động (ổ cứng). Dữ liệu thường được chuyển đổi thành chuỗi bằng JSON.stringify() trước khi lưu bằng setItem() và được giải mã bằng JSON.parse() sau khi đọc lên bằng getItem().
