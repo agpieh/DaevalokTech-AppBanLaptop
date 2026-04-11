@@ -1,19 +1,47 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
 import { products } from '../../constants/data'; // 👉 1. Gọi kho dữ liệu vào
-
+import { storageService } from '../../services/storageService'; // Hoặc đường dẫn tương ứng
 // 👉 2. Thẻ sản phẩm đã sửa chuẩn chỉ nhận { item }
 const ProductCard = ({ item }: any) => {
   const router = useRouter();
+
+  // 👉 HÀM XỬ LÝ: Thêm thẳng vào giỏ từ màn hình Home
+  const handleAddToCart = async () => {
+    try {
+      // 1. Kéo giỏ hàng từ dưới ổ cứng lên
+      let currentCart = await storageService.getCart();
+
+      // 2. Tìm xem sản phẩm này đã có trong giỏ chưa (Check bằng ID cho chuẩn)
+      const existingItemIndex = currentCart.findIndex((cartItem: any) => cartItem.id === item.id);
+
+      if (existingItemIndex >= 0) {
+        // Có rồi -> Tăng số lượng
+        currentCart[existingItemIndex].quantity += 1;
+      } else {
+        // Chưa có -> Thêm mới tinh vào giỏ
+        currentCart.push({ ...item, quantity: 1 });
+      }
+
+      // 3. Đóng gói lưu lại xuống ổ cứng
+      await storageService.saveCart(currentCart);
+
+      // 4. Báo cho người dùng biết
+      Alert.alert("Thành công", `Đã thêm ${item.name} vào giỏ hàng!`);
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể thêm vào giỏ hàng.");
+      console.error(error);
+    }
+  };
 
   return (
     <TouchableOpacity 
       style={styles.cardContainer} 
       activeOpacity={0.8}
-      // Bay sang detail kèm theo cái ID của sản phẩm
+      // Bay sang detail
       onPress={() => router.push(`/product-detail?id=${item.id}`)} 
     >
       <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
@@ -21,7 +49,9 @@ const ProductCard = ({ item }: any) => {
       <Text style={styles.cardWeight}>{item.weight}</Text>
       <View style={styles.cardBottomRow}>
         <Text style={styles.cardPrice}>${item.price}</Text>
-        <TouchableOpacity style={styles.addButton}>
+        
+        {/* 👉 ĐÃ GẮN HÀM XỬ LÝ VÀO NÚT CỘNG MÀU XANH */}
+        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
           <Ionicons name="add" size={24} color={Colors.white} />
         </TouchableOpacity>
       </View>

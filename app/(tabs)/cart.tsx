@@ -1,24 +1,71 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // 👉 1. THÊM IMPORT NÀY
-import React, { useState } from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router'; // 👉 Thêm useFocusEffect
+import React, { useCallback, useState } from 'react';
+import { Alert, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
-import { products } from '../../constants/data';
+import { storageService } from '../../services/storageService'; // 👉 Import service
 
 export default function CartScreen() {
-  const router = useRouter(); // 👉 2. KHỞI TẠO ROUTER Ở ĐÂY
-  
-  // Giả lập giỏ hàng
-  const [cartItems, setCartItems] = useState([
-    { ...products[0], quantity: 1 },
-    { ...products[1], quantity: 1 },
-    { ...products[2], quantity: 1 },
-  ]);
+  const router = useRouter();
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
-  // Logic tính tổng tiền tự động
+  // 👉 1. LOAD GIỎ HÀNG KHI MỞ TRANG (Dùng useFocusEffect để mỗi lần bấm sang Tab này đều tự động refresh)
+  useFocusEffect(
+    useCallback(() => {
+      const loadCart = async () => {
+        const savedCart = await storageService.getCart();
+        // Đã xóa đoạn code fake nhét chuối táo ở đây
+        setCartItems(savedCart); 
+      };
+      loadCart();
+    }, [])
+  );
+
+  // 👉 2. HÀM CỐT LÕI: Vừa cập nhật State, vừa lưu xuống ổ cứng
+  const updateCartAndSave = async (newCart: any) => {
+    setCartItems(newCart);
+    await storageService.saveCart(newCart);
+  };
+
+  // 👉 3. HÀM TĂNG SỐ LƯỢNG
+  const increaseQuantity = (index: number) => {
+    const newCart = [...cartItems];
+    newCart[index].quantity += 1;
+    updateCartAndSave(newCart);
+  };
+
+  // 👉 4. HÀM GIẢM SỐ LƯỢNG
+  const decreaseQuantity = (index: number) => {
+    const newCart = [...cartItems];
+    if (newCart[index].quantity > 1) {
+      newCart[index].quantity -= 1;
+      updateCartAndSave(newCart);
+    } else {
+      // Nếu số lượng là 1 mà bấm trừ nữa thì xóa luôn
+      removeItem(index);
+    }
+  };
+
+  // 👉 5. HÀM XÓA SẢN PHẨM
+  const removeItem = (index: number) => {
+    Alert.alert("Xóa sản phẩm", "Bạn có chắc chắn muốn xóa khỏi giỏ hàng?", [
+      { text: "Hủy", style: "cancel" },
+      { 
+        text: "Xóa", 
+        style: "destructive",
+        onPress: () => {
+          const newCart = [...cartItems];
+          newCart.splice(index, 1);
+          updateCartAndSave(newCart);
+        }
+      }
+    ]);
+  };
+
+  // Tính tổng tiền
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
-  // Component render từng dòng trong giỏ hàng
+  // Component render từng sản phẩm
   const renderCartItem = ({ item, index }: any) => (
     <View style={styles.cartItem}>
       <Image source={item.image} style={styles.itemImage} resizeMode="contain" />
@@ -26,11 +73,8 @@ export default function CartScreen() {
       <View style={styles.itemDetails}>
         <View style={styles.titleRow}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <TouchableOpacity onPress={() => {
-            const newCart = [...cartItems];
-            newCart.splice(index, 1);
-            setCartItems(newCart);
-          }}>
+          {/* 👉 GẮN HÀM XÓA */}
+          <TouchableOpacity onPress={() => removeItem(index)}>
             <Ionicons name="close" size={24} color={Colors.textLight} />
           </TouchableOpacity>
         </View>
@@ -38,13 +82,17 @@ export default function CartScreen() {
         
         <View style={styles.priceRow}>
           <View style={styles.quantityContainer}>
-            <TouchableOpacity style={styles.qtyBtn}>
+            {/* 👉 GẮN HÀM GIẢM */}
+            <TouchableOpacity style={styles.qtyBtn} onPress={() => decreaseQuantity(index)}>
               <Ionicons name="remove" size={24} color={Colors.textLight} />
             </TouchableOpacity>
+            
             <View style={styles.qtyBox}>
               <Text style={styles.qtyText}>{item.quantity}</Text>
             </View>
-            <TouchableOpacity style={styles.qtyBtn}>
+            
+            {/* 👉 GẮN HÀM TĂNG */}
+            <TouchableOpacity style={styles.qtyBtn} onPress={() => increaseQuantity(index)}>
               <Ionicons name="add" size={24} color={Colors.primary} />
             </TouchableOpacity>
           </View>
@@ -69,9 +117,8 @@ export default function CartScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Nút Thanh toán có đính kèm Tổng tiền */}
       <View style={styles.checkoutContainer}>
-        {/* 👉 3. SỬA LINK TRỎ SANG '/checkout' CHUẨN XÁC */}
+        {/* Để nút Checkout vẫn chạy được */}
         <TouchableOpacity style={styles.checkoutButton} onPress={() => router.push('/checkout')}>
           <Text style={styles.checkoutText}>Go to Checkout</Text>
           <View style={styles.totalBadge}>
