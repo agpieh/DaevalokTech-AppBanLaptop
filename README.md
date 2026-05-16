@@ -1,4 +1,5 @@
 ## Tên đề tài: Xây dựng ứng dụng bán máy tính
+**Link Demo**: https://drive.google.com/file/d/17Mj4yRaZI1EEQCu_ApBBjGTQJUlY-Zcv/view?usp=sharing
 ## Giới thiệu hệ thống
 **Daevalok Tech** là giải pháp ứng dụng di động thương mại điện tử chuyên biệt cho lĩnh vực kinh doanh laptop và phụ kiện công nghệ. Ứng dụng được xây dựng trên nền tảng di động tiên tiến, tối ưu hóa trải nghiệm người dùng (UI/UX) giúp việc tìm kiếm cấu hình, so sánh giá cả và đặt hàng trở nên nhanh chóng, mượt mà.
 
