@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../constants/Colors';
 import { products } from '../constants/data';
-import { storageService } from '../services/storageService'; // 👉 Chèn thêm service để giỏ hàng hoạt động thật
+import { storageService } from '../services/storageService';
 
 const formatCurrency = (priceInUSD: number) => {
   const priceInVND = priceInUSD * 25000;
@@ -18,6 +18,49 @@ export default function ProductDetailScreen() {
 
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // 👉 TỰ ĐỘNG KIỂM TRA TRẠNG THÁI THẢ TIM KHI VÀO TRANG
+  useFocusEffect(
+    useCallback(() => {
+      const checkFavoriteStatus = async () => {
+        if (!product) return;
+        try {
+          const favorites = await storageService.getFavorites();
+          // Kiểm tra xem ID của sản phẩm này đã tồn tại trong mảng yêu thích chưa
+          const exists = favorites.some((fav: any) => fav.id === product.id);
+          setIsFavorite(exists);
+        } catch (error) {
+          console.error("Lỗi kiểm tra trạng thái yêu thích:", error);
+        }
+      };
+      checkFavoriteStatus();
+    }, [product])
+  );
+
+  // 👉 HÀM XỬ LÝ THÊM/BỚT YÊU THÍCH THẬT
+  const handleToggleFavorite = async () => {
+    if (!product) return;
+    try {
+      let favorites = await storageService.getFavorites();
+      const exists = favorites.some((fav: any) => fav.id === product.id);
+
+      if (exists) {
+        // Đã yêu thích rồi thì bấm lại để XÓA ra khỏi list
+        favorites = favorites.filter((fav: any) => fav.id !== product.id);
+        setIsFavorite(false);
+      } else {
+        // Chưa yêu thích thì THÊM vào list
+        favorites.push(product);
+        setIsFavorite(true);
+      }
+
+      // Lưu mảng mới cập nhật lại vào AsyncStorage
+      await storageService.saveFavorites(favorites);
+    } catch (error) {
+      console.error("Lỗi xử lý yêu thích:", error);
+      Alert.alert("Lỗi", "Không thể cập nhật danh sách yêu thích.");
+    }
+  };
 
   // 👉 HÀM XỬ LÝ THÊM VÀO GIỎ HÀNG THẬT
   const handleAddToCart = async () => {
@@ -66,8 +109,13 @@ export default function ProductDetailScreen() {
         <View style={styles.detailsContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.productTitle}>{product.name}</Text>
-            <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
-              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={28} color={isFavorite ? "#F3603F" : Colors.textLight} />
+            {/* 👉 ĐÃ SỬA: Gọi hàm handleToggleFavorite khi bấm nút trái tim */}
+            <TouchableOpacity onPress={handleToggleFavorite}>
+              <Ionicons 
+                name={isFavorite ? "heart" : "heart-outline"} 
+                size={28} 
+                color={isFavorite ? "#F3603F" : Colors.textLight} 
+              />
             </TouchableOpacity>
           </View>
           
@@ -84,13 +132,11 @@ export default function ProductDetailScreen() {
               </TouchableOpacity>
             </View>
             
-            {/* 👉 ĐÃ FIX: Dùng formatCurrency chuẩn VNĐ */}
             <Text style={styles.price}>{formatCurrency(product.price)}</Text>
           </View>
 
           <View style={styles.divider} />
 
-          {/* 👉 ĐÃ FIX: Việt hóa nội dung */}
           <View style={styles.expandableSection}>
             <Text style={styles.sectionTitle}>Mô tả sản phẩm</Text>
           </View>
@@ -123,7 +169,6 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {/* 👉 ĐÃ FIX: Gọi hàm thêm giỏ hàng thật */}
         <TouchableOpacity style={styles.basketButton} onPress={handleAddToCart}>
           <Text style={styles.basketButtonText}>Thêm vào giỏ hàng</Text>
         </TouchableOpacity>
