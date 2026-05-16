@@ -17,8 +17,9 @@ export default function CheckoutModal() {
   const [selectedPayment, setSelectedPayment] = useState('momo');
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Hộp chứa đồng hồ đếm ngược
+  // Hộp chứa đồng hồ đếm ngược và dữ liệu đơn hàng nháp
   const timeoutRef = useRef<any>(null);
+  const pendingOrderRef = useRef<any>(null); // 👉 Dùng để giữ đơn hàng tạm thời trong lúc chờ
 
   useEffect(() => {
     const loadTotal = async () => {
@@ -45,6 +46,7 @@ export default function CheckoutModal() {
 
       const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 
+      // Tạo object đơn hàng
       const newOrder = {
         id: orderId, 
         items: currentCart,
@@ -53,7 +55,7 @@ export default function CheckoutModal() {
         date: new Date().toLocaleString('vi-VN'),
       };
 
-      // COD thì phi thẳng qua Thành công
+      // TRƯỜNG HỢP 1: COD thì cho thành công và LƯU LUÔN không cần chờ
       if (selectedPayment === 'cod') {
         await storageService.saveOrder(newOrder);
         await storageService.clearCart();
@@ -61,14 +63,23 @@ export default function CheckoutModal() {
         return;
       }
 
-      // Ví điện tử thì bật Loading
+      // TRƯỜNG HỢP 2: Thanh toán qua Ví điện tử (MoMo/VNPay)
       setIsProcessing(true);
-      await storageService.saveOrder(newOrder);
-      await storageService.clearCart();
       
-      // Chạy đồng hồ 3.5s
-      timeoutRef.current = setTimeout(() => {
+      // 👉 CHỈ GIỮ NHÁP ĐƠN HÀNG VÀO REF, CHƯA LƯU VÀO ASYNCSTORAGE
+      pendingOrderRef.current = newOrder;
+      
+      // Chạy đồng hồ giả lập 3.5s kết nối cổng thanh toán
+      timeoutRef.current = setTimeout(async () => {
         setIsProcessing(false);
+        
+        // 👉 ĐỂ HẾT 3.5S THÌ MỚI CHÍNH THỨC LƯU VÀO BỘ NHỚ MÁY VÀ XÓA GIỎ
+        if (pendingOrderRef.current) {
+          await storageService.saveOrder(pendingOrderRef.current);
+          await storageService.clearCart();
+          pendingOrderRef.current = null; // Xóa nháp sau khi đã lưu thật
+        }
+        
         router.push('/order-result?status=success' as any);
       }, 3500);
 
@@ -83,8 +94,12 @@ export default function CheckoutModal() {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    
+    // 👉 HỦY BỎ ĐƠN HÀNG NHÁP, KHÔNG CHO LƯU VÀO ASYNCSTORAGE NỮA
+    pendingOrderRef.current = null;
+    
     setIsProcessing(false);
-    router.push('/order-error' as any); 
+    router.push('/payment-failed' as any); // Phi thẳng qua màn hình lỗi công ty
   };
 
   const PaymentOption = ({ id, label, icon, color }: any) => {
