@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // 👉 Thêm router để chuyển trang
-import React, { useEffect, useState } from 'react'; // 👉 Thêm useEffect, useState
+import { useFocusEffect, useRouter } from 'expo-router'; // 👉 Đổi sang useFocusEffect
+import React, { useCallback, useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
-import { storageService } from '../../services/storageService'; // 👉 Import storage
+import { storageService } from '../../services/storageService';
 
-const AccountItem = ({ icon, title }: { icon: string; title: string }) => (
-  <TouchableOpacity style={styles.itemRow}>
+// 👉 Thêm thuộc tính onPress để nút nào cũng bấm được
+const AccountItem = ({ icon, title, onPress }: { icon: string; title: string; onPress?: () => void }) => (
+  <TouchableOpacity style={styles.itemRow} onPress={onPress}>
     <View style={styles.itemLeft}>
       <Ionicons name={icon as any} size={22} color={Colors.textDark} />
       <Text style={styles.itemTitle}>{title}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={20} color={Colors.textDark} />
+    <Ionicons name="chevron-forward" size={20} color={Colors.textLight} />
   </TouchableOpacity>
 );
 
@@ -19,32 +20,31 @@ export default function AccountScreen() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
-  // 👉 Tự động load thông tin user từ Storage khi mở màn hình
-  useEffect(() => {
-    const loadUserData = async () => {
-      const savedUser = await storageService.getUser();
-      if (savedUser) {
-        setUser(savedUser);
-      }
-    };
-    loadUserData();
-  }, []);
+  // 👉 Tự động load thông tin user MỖI KHI MỞ TAB NÀY
+  useFocusEffect(
+    useCallback(() => {
+      const loadUserData = async () => {
+        const savedUser = await storageService.getUserInfo(); // Nhớ gọi đúng tên hàm này nhé
+        if (savedUser) {
+          setUser(savedUser);
+        }
+      };
+      loadUserData();
+    }, [])
+  );
 
-  // 👉 ĐỊNH NGHĨA HÀM LOGOUT BỊ THIẾU
   const handleLogout = () => {
     Alert.alert(
       "Đăng xuất",
-      "Bạn có chắc chắn muốn thoát không?",
+      "Bạn có chắc chắn muốn thoát khỏi ứng dụng?",
       [
         { text: "Hủy", style: "cancel" },
         { 
           text: "Đăng xuất", 
           style: "destructive",
           onPress: async () => {
-            // 1. Xóa dữ liệu user khỏi bộ nhớ
-            await storageService.removeUser();
-            // 2. Bay thẳng ra màn Login
-            router.replace('/login');
+            // Giả định bồ đăng xuất, bay thẳng ra màn Welcome/Login
+            router.replace('/login' as any); // Chỉnh lại route nếu bồ dùng tên file khác
           }
         }
       ]
@@ -59,38 +59,43 @@ export default function AccountScreen() {
           <Image source={require('../../assets/images/User-1.jpg')} style={styles.avatar} />
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              {/* 👉 Hiển thị tên động từ AsyncStorage (hoặc tên mặc định nếu lỗi) */}
-              <Text style={styles.nameText}>{user ? user.name : 'Đại Hiệp'}</Text>
+              {/* Hiển thị tên động, không có thì mặc định là Daevalok */}
+              <Text style={styles.nameText}>{user?.name ? user.name : 'Daevalok'}</Text>
               <Ionicons name="pencil" size={16} color={Colors.primary} />
             </View>
-            {/* 👉 Hiển thị email động */}
-            <Text style={styles.emailText}>{user ? user.email : '21810310632@epu.edu.vn'}</Text>
+            {/* Hiển thị email động */}
+            <Text style={styles.emailText}>{user?.email ? user.email : '21810310632@epu.edu.vn'}</Text>
           </View>
         </View>
 
-        {/* List Items */}
+        {/* List Items - Đã cắt tỉa và Việt Hóa */}
         <View style={styles.listContainer}>
-          <TouchableOpacity style={styles.itemRow} onPress={() => router.push('../orders')}>
-            <View style={styles.itemLeft}>
-              <Ionicons name="bag-handle-outline" size={22} color={Colors.textDark} />
-              <Text style={styles.itemTitle}>Orders</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textDark} />
-          </TouchableOpacity>
-
-          <AccountItem icon="card-outline" title="My Details" />
-          <AccountItem icon="location-outline" title="Delivery Address" />
-          <AccountItem icon="wallet-outline" title="Payment Methods" />
-          <AccountItem icon="gift-outline" title="Promo Cord" />
-          <AccountItem icon="notifications-outline" title="Notifications" />
-          <AccountItem icon="help-circle-outline" title="Help" />
-          <AccountItem icon="information-circle-outline" title="About" />
+          <AccountItem 
+            icon="bag-check-outline" 
+            title="Lịch sử đơn hàng" 
+            onPress={() => router.push('/orders' as any)} 
+          />
+          <AccountItem 
+            icon="person-outline" 
+            title="Thông tin cá nhân" 
+            onPress={() => alert('Tính năng đang phát triển!')} 
+          />
+          <AccountItem 
+            icon="location-outline" 
+            title="Địa chỉ giao hàng" 
+            onPress={() => alert('Tính năng đang phát triển!')} 
+          />
+          <AccountItem 
+            icon="information-circle-outline" 
+            title="Về Daevalok Tech" 
+            onPress={() => alert('Phiên bản 1.0.0 \nĐồ án Tốt nghiệp')} 
+          />
         </View>
 
         {/* Log Out Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color={Colors.primary} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -99,16 +104,18 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white, paddingTop: 40 },
-  profileHeader: { flexDirection: 'row', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#E2E2E2' },
-  avatar: { width: 64, height: 64, borderRadius: 27 },
+  profileHeader: { flexDirection: 'row', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#F2F3F2' },
+  avatar: { width: 64, height: 64, borderRadius: 32 }, // Đổi borderRadius thành nửa width/height để ảnh tròn xoe
   profileInfo: { marginLeft: 20 },
-  nameRow: { flexDirection: 'row', alignItems: 'center' },
-  nameText: { fontSize: 20, fontWeight: 'bold', color: Colors.textDark, marginRight: 5 },
-  emailText: { fontSize: 16, color: Colors.textLight },
+  nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  nameText: { fontSize: 20, fontWeight: 'bold', color: Colors.textDark, marginRight: 8 },
+  emailText: { fontSize: 14, color: Colors.textLight },
+  
   listContainer: { marginTop: 10 },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 20, marginHorizontal: 25, borderBottomWidth: 1, borderBottomColor: '#E2E2E2' },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 20, marginHorizontal: 25, borderBottomWidth: 1, borderBottomColor: '#F2F3F2' },
   itemLeft: { flexDirection: 'row', alignItems: 'center' },
-  itemTitle: { fontSize: 18, fontWeight: '600', color: Colors.textDark, marginLeft: 15 },
-  logoutButton: { flexDirection: 'row', backgroundColor: '#F2F3F2', height: 67, borderRadius: 19, marginHorizontal: 25, marginTop: 40, marginBottom: 40, justifyContent: 'center', alignItems: 'center' },
-  logoutText: { color: Colors.primary, fontSize: 18, fontWeight: 'bold', marginLeft: 10 }
+  itemTitle: { fontSize: 16, fontWeight: '600', color: Colors.textDark, marginLeft: 15 },
+  
+  logoutButton: { flexDirection: 'row', backgroundColor: '#F9F9F9', height: 60, borderRadius: 15, marginHorizontal: 25, marginTop: 40, marginBottom: 40, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#F2F3F2' },
+  logoutText: { color: Colors.primary, fontSize: 16, fontWeight: 'bold', marginLeft: 10 }
 });

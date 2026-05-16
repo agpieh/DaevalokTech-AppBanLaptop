@@ -1,39 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react'; // 👉 Thêm 3 hàm này
+import { Alert, Dimensions, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
-import { products } from '../../constants/data'; // 👉 1. Gọi kho dữ liệu vào
-import { storageService } from '../../services/storageService'; // Hoặc đường dẫn tương ứng
-// 👉 2. Thẻ sản phẩm đã sửa chuẩn chỉ nhận { item }
+import { products } from '../../constants/data';
+import { storageService } from '../../services/storageService';
+
+// Tự động tính toán chiều rộng của Slider
+const screenWidth = Dimensions.get('window').width;
+const bannerWidth = screenWidth - 40; 
+
+const formatCurrency = (priceInUSD: number) => {
+  const priceInVND = priceInUSD * 25000;
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(priceInVND);
+};
+
+// ================= COMPONENT THẺ SẢN PHẨM =================
 const ProductCard = ({ item }: any) => {
   const router = useRouter();
 
-  // 👉 HÀM XỬ LÝ: Thêm thẳng vào giỏ từ màn hình Home
   const handleAddToCart = async () => {
     try {
-      // 1. Kéo giỏ hàng từ dưới ổ cứng lên
       let currentCart = await storageService.getCart();
-
-      // 2. Tìm xem sản phẩm này đã có trong giỏ chưa (Check bằng ID cho chuẩn)
       const existingItemIndex = currentCart.findIndex((cartItem: any) => cartItem.id === item.id);
 
       if (existingItemIndex >= 0) {
-        // Có rồi -> Tăng số lượng
         currentCart[existingItemIndex].quantity += 1;
       } else {
-        // Chưa có -> Thêm mới tinh vào giỏ
         currentCart.push({ ...item, quantity: 1 });
       }
-
-      // 3. Đóng gói lưu lại xuống ổ cứng
       await storageService.saveCart(currentCart);
-
-      // 4. Báo cho người dùng biết
       Alert.alert("Thành công", `Đã thêm ${item.name} vào giỏ hàng!`);
     } catch (error) {
       Alert.alert("Lỗi", "Không thể thêm vào giỏ hàng.");
-      console.error(error);
     }
   };
 
@@ -41,16 +40,13 @@ const ProductCard = ({ item }: any) => {
     <TouchableOpacity 
       style={styles.cardContainer} 
       activeOpacity={0.8}
-      // Bay sang detail
-      onPress={() => router.push(`/product-detail?id=${item.id}`)} 
+      onPress={() => router.push(`/product-detail?id=${item.id}` as any)} 
     >
       <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <Text style={styles.cardWeight}>{item.weight}</Text>
+      <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
+      <Text style={styles.cardSpecs} numberOfLines={1}>{item.specs}</Text>
       <View style={styles.cardBottomRow}>
-        <Text style={styles.cardPrice}>${item.price}</Text>
-        
-        {/* 👉 ĐÃ GẮN HÀM XỬ LÝ VÀO NÚT CỘNG MÀU XANH */}
+        <Text style={styles.cardPrice} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(item.price)}</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
           <Ionicons name="add" size={24} color={Colors.white} />
         </TouchableOpacity>
@@ -59,86 +55,124 @@ const ProductCard = ({ item }: any) => {
   );
 };
 
-// Component Thẻ Danh Mục (Groceries)
-const CategoryCard = ({ name, imageSource, backgroundColor }: any) => (
-  <TouchableOpacity style={[styles.categoryCard, { backgroundColor }]} activeOpacity={0.8}>
-    <Image source={imageSource} style={styles.categoryImage} resizeMode="contain" />
-    <Text style={styles.categoryName}>{name}</Text>
-  </TouchableOpacity>
-);
-
-// Component Tiêu đề Danh mục
-const SectionHeader = ({ title }: { title: string }) => (
+const SectionHeader = ({ title, onPress }: { title: string, onPress: () => void }) => (
   <View style={styles.sectionHeader}>
     <Text style={styles.sectionTitle}>{title}</Text>
-    <TouchableOpacity>
-      <Text style={styles.seeAllText}>See all</Text>
+    <TouchableOpacity onPress={onPress}>
+      <Text style={styles.seeAllText}>Xem tất cả</Text>
     </TouchableOpacity>
   </View>
 );
 
+// ================= MÀN HÌNH CHÍNH =================
 export default function HomeScreen() {
   const router = useRouter();
 
-  // 👉 Lấy giả lập 2 sản phẩm đầu làm "Exclusive Offer", 2 sản phẩm sau làm "Best Selling"
-  const exclusiveOffers = products.slice(0, 2);
-  const bestSellings = products.slice(2, 4);
-  const groceriesProducts = products.slice(4, 6);
+  // 👉 CÁC BIẾN CHO SLIDER TỰ ĐỘNG
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const sliderProducts = products.filter(p => ['1', '6', '24'].includes(p.id));
+
+  // 👉 MA THUẬT AUTO-PLAY (Cứ 3 giây chuyển slide 1 lần)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const nextIndex = (currentIndex + 1) % sliderProducts.length;
+      setCurrentIndex(nextIndex);
+      scrollViewRef.current?.scrollTo({ x: nextIndex * bannerWidth, animated: true });
+    }, 4500); // Đổi số 3000 (3s) nếu muốn nhanh/chậm hơn
+
+    // Dọn dẹp timer để tránh lỗi bộ nhớ
+    return () => clearInterval(timer);
+  }, [currentIndex, sliderProducts.length]);
+
+  // 👉 Đồng bộ vị trí nếu người dùng tự lấy tay vuốt
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollPosition / bannerWidth);
+    setCurrentIndex(index);
+  };
+
+  const gamingLaptops = products.filter(p => p.category === 'Laptop Gaming');
+  const macbooks = products.filter(p => p.category === 'MacBook & iMac');
+  const components = products.filter(p => p.category === 'Linh kiện PC');
+  const accessories = products.filter(p => p.category === 'Phụ kiện Gaming');
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* Header */}
-        <View style={styles.header}>
-          <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-sharp" size={20} color="#4C4F4D" />
-            <Text style={styles.locationText}>Dhaka, Banassre</Text>
+        <View style={styles.headerRow}>
+          <Image 
+            source={require('../../assets/images/logo/logo-dark-transparent.png')} 
+            style={styles.headerLogo} 
+            resizeMode="contain" 
+          />
+          <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/search' as any)}>
+            <Ionicons name="search" size={20} color={Colors.textLight} />
+            <Text style={styles.searchInput} numberOfLines={1}>Tìm Laptop, Phím cơ...</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 👉 SLIDER SẢN PHẨM ĐÃ NÂNG CẤP */}
+        <View style={styles.sliderWrapper}>
+          <ScrollView 
+            ref={scrollViewRef} // Gắn ref để điều khiển trượt
+            horizontal 
+            pagingEnabled 
+            showsHorizontalScrollIndicator={false}
+            
+            onMomentumScrollEnd={handleScroll} // Cập nhật lại khi tự vuốt
+          >
+            {sliderProducts.map((item, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={[styles.slideContainer, { width: bannerWidth }]}
+                activeOpacity={0.9}
+                onPress={() => router.push(`/product-detail?id=${item.id}` as any)} 
+              >
+                <View style={styles.slideInfo}>
+                  <View style={styles.tagContainer}>
+                    <Text style={styles.slideTag}>🔥 HOT DEAL</Text>
+                  </View>
+                  <Text style={styles.slideName} numberOfLines={2}>{item.name}</Text>
+                  <Text style={styles.slidePrice}>{formatCurrency(item.price)}</Text>
+                </View>
+                <Image source={item.image} style={styles.slideImg} resizeMode="contain" />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          
+          {/* 👉 Chấm tròn báo hiệu Slide hiện tại (Dấu trang) */}
+          <View style={styles.pagination}>
+            {sliderProducts.map((_, index) => (
+              <View 
+                key={index} 
+                style={[styles.dot, currentIndex === index ? styles.dotActive : null]} 
+              />
+            ))}
           </View>
         </View>
 
-        {/* Thanh tìm kiếm: Bấm vào bay sang trang Search */}
-        <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/search')}>
-          <Ionicons name="search" size={22} color={Colors.textLight} />
-          <Text style={[styles.searchInput, { color: Colors.textLight }]}>Search Store</Text>
-        </TouchableOpacity>
-
-        {/* Banner */}
-        <View style={styles.bannerContainer}>
-          <Image source={require('../../assets/images/banner.png')} style={styles.banner} resizeMode="cover" />
-        </View>
-
-        {/* Khu vực 1: Exclusive Offer */}
-        <SectionHeader title="Exclusive Offer" />
+        {/* CÁC KHU VỰC SẢN PHẨM BÊN DƯỚI */}
+        <SectionHeader title="Laptop Gaming Khủng" onPress={() => router.push('/category/Laptop Gaming' as any)} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {/* 👉 3. Dùng .map() để tự động sinh ra thẻ thay vì gõ tay */}
-          {exclusiveOffers.map(product => (
-             <ProductCard key={product.id} item={product} />
-          ))}
+          {gamingLaptops.map(product => <ProductCard key={product.id} item={product} />)}
         </ScrollView>
 
-        {/* Khu vực 2: Best Selling */}
-        <SectionHeader title="Best Selling" />
+        <SectionHeader title="MacBook & iMac" onPress={() => router.push('/category/MacBook & iMac' as any)} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {bestSellings.map(product => (
-             <ProductCard key={product.id} item={product} />
-          ))}
+          {macbooks.map(product => <ProductCard key={product.id} item={product} />)}
         </ScrollView>
 
-        {/* Khu vực 3: Groceries */}
-        <SectionHeader title="Groceries" />
-        
-        {/* Dải danh mục màu mè */}
+        <SectionHeader title="Đồ chơi Công nghệ" onPress={() => router.push('/category/Phụ kiện Gaming' as any)} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          <CategoryCard name="Pulses" backgroundColor="#F8EEDB" imageSource={require('../../assets/images/pulses.png')} />
-          <CategoryCard name="Rice" backgroundColor="#E1F3E9" imageSource={require('../../assets/images/rice.png')} />
+          {accessories.map(product => <ProductCard key={product.id} item={product} />)}
         </ScrollView>
 
-        {/* 👉 THÊM ĐOẠN NÀY: Dải Thẻ Sản phẩm Tạp hóa (Đã quay trở lại!) */}
+        <SectionHeader title="Linh kiện PC" onPress={() => router.push('/category/Linh kiện PC' as any)} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {groceriesProducts.map(product => (
-             <ProductCard key={product.id} item={product} />
-          ))}
+          {components.map(product => <ProductCard key={product.id} item={product} />)}
         </ScrollView>
 
       </ScrollView>
@@ -146,33 +180,50 @@ export default function HomeScreen() {
   );
 }
 
+// ================= STYLES =================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white, paddingTop: 40 }, // Mặc định padding top
+  container: { flex: 1, backgroundColor: Colors.white, paddingTop: 40 },
   scrollContent: { paddingBottom: 30 },
-  header: { alignItems: 'center', marginTop: 10, marginBottom: 20 },
-  logo: { width: 30, height: 35, marginBottom: 10 },
-  locationContainer: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { fontSize: 16, color: '#4C4F4D', fontWeight: '600', marginLeft: 5 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F3F2', borderRadius: 15, paddingHorizontal: 15, height: 50, marginHorizontal: 20, marginBottom: 20 },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 16 },
-  bannerContainer: { marginHorizontal: 20, marginBottom: 30, borderRadius: 15, overflow: 'hidden' },
-  banner: { width: '100%', height: 115 }, 
+  
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20, marginTop: 10 },
+  headerLogo: { width: 80, height: 35, marginRight: 15 },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F3F2', borderRadius: 12, paddingHorizontal: 15, height: 45 },
+  searchInput: { marginLeft: 10, fontSize: 15, color: Colors.textLight },
+  
+  // 👉 Nâng cấp Style cho Slider (Box đen, nền trắng)
+  sliderWrapper: { marginHorizontal: 20, marginBottom: 30, borderRadius: 15, position: 'relative' },
+  slideContainer: { 
+    height: 160, 
+    backgroundColor: Colors.white, // Nền trắng
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 15,
+    borderWidth: 2,           // Viền đen dày
+    borderColor: '#111',      // Màu viền đen
+    borderRadius: 15,
+  },
+  slideInfo: { flex: 1, justifyContent: 'center' },
+  tagContainer: { backgroundColor: '#111', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 },
+  slideTag: { color: 'white', fontSize: 10, fontWeight: 'bold' },
+  slideName: { color: '#111', fontSize: 18, fontWeight: 'bold', marginBottom: 8, lineHeight: 24 }, // Chữ đen
+  slidePrice: { color: Colors.primary, fontSize: 16, fontWeight: 'bold' },
+  slideImg: { width: 130, height: 130, marginLeft: 10 },
+  
+  // 👉 Style cho các chấm tròn
+  pagination: { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#D9D9D9', marginHorizontal: 4 },
+  dotActive: { width: 20, backgroundColor: '#111' }, // Chấm đen dài báo hiệu slide hiện tại
+
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginBottom: 15 },
-  sectionTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.textDark },
+  sectionTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.textDark },
   seeAllText: { fontSize: 16, color: Colors.primary, fontWeight: '600' },
   horizontalScroll: { paddingLeft: 20, marginBottom: 30 },
   
-  // Style Thẻ Sản Phẩm
   cardContainer: { width: 170, padding: 15, backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: '#E2E2E2', marginRight: 15 },
-  cardImage: { width: '100%', height: 80, marginBottom: 15 },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.textDark, marginBottom: 5 },
-  cardWeight: { fontSize: 14, color: Colors.textLight, marginBottom: 15 },
+  cardImage: { width: '100%', height: 100, marginBottom: 15 },
+  cardTitle: { fontSize: 15, fontWeight: 'bold', color: Colors.textDark, marginBottom: 5, height: 40 },
+  cardSpecs: { fontSize: 13, color: Colors.textLight, marginBottom: 15 },
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardPrice: { fontSize: 18, fontWeight: 'bold', color: Colors.textDark },
+  cardPrice: { fontSize: 15, fontWeight: 'bold', color: Colors.textDark, flex: 1, marginRight: 5 },
   addButton: { width: 45, height: 45, backgroundColor: Colors.primary, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-
-  // Style Thẻ Danh Mục
-  categoryCard: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 15, borderRadius: 18, width: 250, marginRight: 15 },
-  categoryImage: { width: 70, height: 70, marginRight: 15 },
-  categoryName: { fontSize: 20, fontWeight: '600', color: Colors.textDark }
 });

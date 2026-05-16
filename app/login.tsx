@@ -49,11 +49,11 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.logoContainer}>
-          <Image source={require('../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
+          <Image source={require('../assets/images/logo/logo-dark-transparen1t.png')} style={styles.logo} resizeMode="contain" />
         </View>
         <View style={styles.header}>
-          <Text style={styles.title}>Loging</Text>
-          <Text style={styles.subtitle}>Enter your emails and password</Text>
+          <Text style={styles.title}>Login</Text>
+          <Text style={styles.subtitle}>Đăng nhập để bắt đầu trải nghiệm</Text>
         </View>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email</Text>
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
   scrollContent: { paddingHorizontal: 25, paddingBottom: 40 },
   logoContainer: { alignItems: 'center', marginTop: 50, marginBottom: 50 }, 
-  logo: { width: 50, height: 55 }, 
+  logo: { width: 150, height: 55 }, 
   header: { marginBottom: 40 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textDark, marginBottom: 10 },
   subtitle: { fontSize: 16, color: Colors.textLight },

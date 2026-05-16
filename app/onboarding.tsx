@@ -1,36 +1,47 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ImageBackground, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../constants/Colors';
 
-export default function OnboardingScreen() {
+export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    // Cập nhật tên file ảnh nền anh giao hàng vào đây
     <ImageBackground 
-      source={require('../assets/images/8140 1.png')} 
+      source={require('../assets/images/logo/HD-wallpaper-gaming-setup-magenta-computer-gamingsetup-light-neon-night-pcsetup-desksetup.jpg')} 
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Lớp phủ đen mờ nếu ảnh hơi sáng, giúp chữ nổi bật hơn (tùy chọn) */}
       <View style={styles.overlay}>
-        <SafeAreaView style={styles.contentContainer}>
+        <SafeAreaView style={styles.container}>
           
-          <View style={styles.textContainer}>
-            {/* Tùy chọn: Thêm icon củ cà rốt trắng nhỏ ở đây nếu Figma có */}
-            <Text style={styles.title}>Welcome</Text>
-            <Text style={styles.title}>to our store</Text>
-            <Text style={styles.subtitle}>Get your groceries in as fast as one hour</Text>
+          {/* PHẦN 1: Cụm Logo & Chữ (Tự động nằm giữa khoảng trống) */}
+          <View style={styles.mainContent}>
+            <Text style={styles.title}>
+              Chào mừng đến với
+            </Text>
+            
+            <Image 
+              source={require('../assets/images/logo/logo-light-transparent.png')} 
+              style={styles.logo} 
+              resizeMode="contain" 
+            />
+            
+            <Text style={styles.subtitle}>
+              Khám phá thế giới công nghệ đỉnh cao.{'\n'}Laptop, PC & Phụ kiện chính hãng.
+            </Text>
           </View>
 
-          {/* Nút bấm Get Started */}
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={() => router.push('/welcome')}
-          >
-            <Text style={styles.buttonText}>Get Started</Text>
-          </TouchableOpacity>
+          {/* PHẦN 2: Nút bấm (Luôn bị đẩy xuống sát đáy) */}
+          <View style={styles.bottomSection}>
+            <TouchableOpacity 
+              style={styles.button} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/login' as any)}
+            >
+              <Text style={styles.buttonText}>Bắt đầu khám phá</Text>
+            </TouchableOpacity>
+          </View>
 
         </SafeAreaView>
       </View>
@@ -39,48 +50,51 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+  background: { flex: 1, width: '100%', height: '100%' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' }, 
+  container: { flex: 1 },
+  
+  // 👉 Khung chứa Logo và Chữ: flex: 1 giúp nó chiếm toàn bộ khoảng trống phía trên nút bấm
+  mainContent: { 
+    flex: 1, 
+    justifyContent: 'center', // Căn giữa theo chiều dọc
+    alignItems: 'center',     // Căn giữa theo chiều ngang
+    paddingHorizontal: 30 
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)', // Có thể chỉnh độ mờ ở đây
-    justifyContent: 'flex-end', // Đẩy mọi thứ xuống đáy
-  },
-  contentContainer: {
-    alignItems: 'center',
-    paddingBottom: 50,
+  
+  // 👉 Khung chứa Nút bấm: neo chặt ở dưới cùng, cách đáy 40px
+  bottomSection: {
     paddingHorizontal: 30,
+    paddingBottom: 40, 
   },
-  textContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
+  
+  title: { 
+    fontSize: 26, 
+    fontWeight: 'bold', 
+    color: 'white', 
+    textAlign: 'center', 
+    marginBottom: 5 
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: Colors.white,
-    textAlign: 'center',
+  
+  logo: { 
+    width: 240, 
+    height: 240, 
+    marginBottom: 5, 
   },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.7)', // Màu trắng hơi trong suốt
-    textAlign: 'center',
-    marginTop: 10,
+  
+  subtitle: { 
+    fontSize: 16, 
+    color: 'rgba(255,255,255,0.8)', 
+    textAlign: 'center', 
+    lineHeight: 24 
   },
-  button: {
-    backgroundColor: Colors.primary,
-    width: '100%',
-    height: 67,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
+  
+  button: { 
+    backgroundColor: Colors.primary, 
+    width: '100%', 
+    paddingVertical: 18, 
+    borderRadius: 15, 
+    alignItems: 'center' 
   },
-  buttonText: {
-    color: Colors.white,
-    fontSize: 18,
-    fontWeight: '600',
-  },
+  buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' }
 });

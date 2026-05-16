@@ -10,7 +10,7 @@ export const storageService = {
   // ==============================
   // 1. AUTH (XÁC THỰC)
   // ==============================
-  saveUser: async (userData) => {
+  saveUser: async (userData: any) => {
     try {
       await AsyncStorage.setItem(KEYS.USER, JSON.stringify(userData));
     } catch (e) {
@@ -39,7 +39,7 @@ export const storageService = {
   // ==============================
   // 2. CART (GIỎ HÀNG)
   // ==============================
-  saveCart: async (cartItems) => {
+  saveCart: async (cartItems: any) => {
     try {
       await AsyncStorage.setItem(KEYS.CART, JSON.stringify(cartItems));
     } catch (e) {
@@ -67,7 +67,7 @@ export const storageService = {
   // ==============================
   // 3. ORDERS (ĐƠN HÀNG)
   // ==============================
-  saveOrder: async (newOrder) => {
+  saveOrder: async (newOrder: any) => {
     try {
       // 1. Lấy dữ liệu thô từ storage trước
       const jsonValue = await AsyncStorage.getItem(KEYS.ORDERS);
@@ -91,6 +91,23 @@ export const storageService = {
     } catch(e) {
       console.error('❌ Lỗi khi getOrders:', e);
       return [];
+    }
+  },
+  saveUserInfo: async (userInfo: any) => {
+    try {
+      await AsyncStorage.setItem('USER_INFO', JSON.stringify(userInfo));
+    } catch (e) {
+      console.error("Lỗi lưu thông tin user", e);
+    }
+  },
+
+  getUserInfo: async () => {
+    try {
+      const value = await AsyncStorage.getItem('USER_INFO');
+      // Nếu chưa có ai đăng ký thì trả về tên mặc định cho đỡ trống
+      return value ? JSON.parse(value) : { name: 'Người dùng', email: '' }; 
+    } catch (e) {
+      return { name: 'Người dùng', email: '' };
     }
   }
 };

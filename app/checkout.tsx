@@ -1,153 +1,210 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../constants/Colors';
 import { storageService } from '../services/storageService';
 
-// ==========================================
-// COMPONENT PHỤ: Giao diện từng dòng Checkout
-// ==========================================
-const CheckoutRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <View style={styles.row}>
-    <Text style={styles.label}>{label}</Text>
-    <View style={styles.valueRow}>
-      {children}
-      <Ionicons name="chevron-forward" size={18} color={Colors.textDark} style={styles.chevron} />
-    </View>
-  </View>
-);
+// Format tiền tệ
+const formatCurrency = (priceInUSD: number) => {
+  const priceInVND = priceInUSD * 25000;
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(priceInVND);
+};
 
-// ==========================================
-// COMPONENT CHÍNH: Màn hình Checkout
-// ==========================================
 export default function CheckoutModal() {
   const router = useRouter();
-  const [totalCost, setTotalCost] = useState('0.00');
+  const [totalCost, setTotalCost] = useState(0);
+  const [selectedPayment, setSelectedPayment] = useState('momo');
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Hộp chứa đồng hồ đếm ngược
+  const timeoutRef = useRef<any>(null);
 
-  // 1. Tự động tính tổng tiền khi mở bảng Checkout
   useEffect(() => {
     const loadTotal = async () => {
       const cart = await storageService.getCart();
       const total = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-      setTotalCost(total.toFixed(2));
+      setTotalCost(total);
     };
     loadTotal();
+
+    // Dọn rác khi component bị hủy ngang
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, []);
 
-  // 2. Logic xử lý khi bấm nút "Place Order"
   const handlePlaceOrder = async () => {
     try {
       const currentCart = await storageService.getCart();
       
       if (currentCart.length === 0) {
-        Alert.alert("Thông báo", "Giỏ hàng của bạn đang trống!");
+        Alert.alert("Lỗi", "Giỏ hàng đang trống!");
         return;
       }
 
-      // Tạo đơn hàng mới
+      const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
       const newOrder = {
-        id: 'ORD' + Math.floor(Math.random() * 100000), // VD: ORD12345
+        id: orderId, 
         items: currentCart,
         total: totalCost,
+        paymentMethod: selectedPayment.toUpperCase(), 
         date: new Date().toLocaleString('vi-VN'),
       };
 
-      // Lưu đơn -> Xóa giỏ -> Bay sang màn Thành công
+      // COD thì phi thẳng qua Thành công
+      if (selectedPayment === 'cod') {
+        await storageService.saveOrder(newOrder);
+        await storageService.clearCart();
+        router.push('/order-result?status=success' as any);
+        return;
+      }
+
+      // Ví điện tử thì bật Loading
+      setIsProcessing(true);
       await storageService.saveOrder(newOrder);
       await storageService.clearCart();
-      router.push('/order-result?status=success');
+      
+      // Chạy đồng hồ 3.5s
+      timeoutRef.current = setTimeout(() => {
+        setIsProcessing(false);
+        router.push('/order-result?status=success' as any);
+      }, 3500);
 
     } catch (error) {
-      console.error("Lỗi thanh toán:", error);
-      Alert.alert("Lỗi", "Không thể đặt hàng lúc này. Vui lòng thử lại!");
+      setIsProcessing(false);
+      Alert.alert("Lỗi", "Giao dịch thất bại. Vui lòng thử lại!");
     }
   };
 
-  // 3. Giao diện (UI)
+  const handleCancelPayment = () => {
+    // Đập vỡ đồng hồ ngay lập tức nếu user bấm Hủy
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsProcessing(false);
+    router.push('/order-error' as any); 
+  };
+
+  const PaymentOption = ({ id, label, icon, color }: any) => {
+    const isSelected = selectedPayment === id;
+    return (
+      <TouchableOpacity 
+        style={[styles.paymentBox, isSelected && styles.paymentBoxActive]} 
+        onPress={() => setSelectedPayment(id)}
+        disabled={isProcessing}
+      >
+        <View style={[styles.iconWrapper, { backgroundColor: color }]}>
+          <Ionicons name={icon} size={24} color="#FFF" />
+        </View>
+        <Text style={[styles.paymentLabel, isSelected && styles.paymentLabelActive]}>{label}</Text>
+        {isSelected && <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {/* Bấm ra ngoài vùng tối để đóng Modal */}
-      <TouchableOpacity style={styles.backdrop} onPress={() => router.back()} />
+      <TouchableOpacity 
+        style={styles.backdrop} 
+        onPress={() => { if (!isProcessing) router.back(); }} 
+      />
       
       <View style={styles.modalContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Checkout</Text>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color={Colors.textDark} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Các dòng thông tin */}
-        <CheckoutRow label="Delivery">
-          <Text style={styles.valueText}>Select Method</Text>
-        </CheckoutRow>
-
-        <CheckoutRow label="Payment">
-           <Image 
-              source={require('../assets/images/mastercard.png')}
-              style={styles.paymentIcon} 
-              resizeMode="contain" 
-           />
-           <Text style={styles.valueText}>**** **** 4567</Text> 
-        </CheckoutRow>
-
-        <CheckoutRow label="Promo Code">
-          <Text style={styles.valueText}>Pick discount</Text>
-        </CheckoutRow>
-
-        <CheckoutRow label="Total Cost">
-          <Text style={styles.valueText}>${totalCost}</Text> 
-        </CheckoutRow>
         
-        {/* Điều khoản */}
-        <Text style={styles.termsText}>
-          By placing an order you agree to our{' '}
-          <Text style={{fontWeight: 'bold', color: Colors.textDark}}>Terms And Conditions</Text>
-        </Text>
+        {isProcessing ? (
+          <View style={styles.processingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 20, transform: [{ scale: 1.5 }] }} />
+            <Text style={styles.processingTitle}>Đang xử lý giao dịch...</Text>
+            <Text style={styles.processingText}>Đang kết nối cổng thanh toán {selectedPayment.toUpperCase()}</Text>
+            
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPayment}>
+              <Text style={styles.cancelBtnText}>Hủy giao dịch</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={{ flex: 1 }}>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Xác nhận Thanh toán</Text>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="close" size={24} color={Colors.textDark} />
+              </TouchableOpacity>
+            </View>
 
-        {/* Nút đặt hàng Thành công */}
-        <TouchableOpacity style={styles.orderButton} onPress={handlePlaceOrder}>
-          <Text style={styles.orderButtonText}>Place Order (Success)</Text>
-        </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.section}>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Tổng tiền hàng</Text>
+                  <Text style={styles.valueText}>{formatCurrency(totalCost)}</Text>
+                </View>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Phí vận chuyển</Text>
+                  <Text style={styles.valueText}>Miễn phí</Text>
+                </View>
+                <View style={[styles.row, { borderBottomWidth: 0 }]}>
+                  <Text style={styles.totalLabel}>Tổng cộng</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(totalCost)}</Text>
+                </View>
+              </View>
 
-        {/* Nút giả lập Thất bại */}
-        <TouchableOpacity 
-          style={[styles.orderButton, styles.errorButton]}
-          onPress={() => router.push('/order-result?status=error')}
-        >
-          <Text style={[styles.orderButtonText, { color: Colors.textDark }]}>Simulate Error</Text>
-        </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+              
+              <PaymentOption id="momo" label="Ví điện tử MoMo" icon="wallet" color="#A50064" />
+              <PaymentOption id="vnpay" label="VNPay / Thẻ ATM" icon="card" color="#005BAA" />
+              <PaymentOption id="cod" label="Thanh toán khi nhận hàng (COD)" icon="cash" color="#53B175" />
 
+              <Text style={styles.termsText}>
+                Bằng việc đặt hàng, bạn đồng ý với{' '}
+                <Text style={{fontWeight: 'bold', color: Colors.primary}}>Điều khoản sử dụng</Text> của chúng tôi.
+              </Text>
+
+              <TouchableOpacity style={styles.orderButton} onPress={handlePlaceOrder}>
+                <Text style={styles.orderButtonText}>Đặt hàng & Thanh toán</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
-// ==========================================
-// STYLES
-// ==========================================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   backdrop: { flex: 1 },
   modalContent: { 
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: 'white', 
+    backgroundColor: '#F5F5F5', 
     borderTopLeftRadius: 30, borderTopRightRadius: 30, 
-    padding: 25,
+    padding: 25, maxHeight: '85%', minHeight: 400, 
     paddingBottom: Platform.OS === 'ios' ? 40 : 25 
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.textDark },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#E2E2E2' },
-  label: { fontSize: 18, color: Colors.textLight, fontWeight: '600' },
-  valueRow: { flexDirection: 'row', alignItems: 'center' },
-  valueText: { fontSize: 16, fontWeight: 'bold', color: Colors.textDark },
-  paymentIcon: { width: 35, height: 25, marginRight: 10 },
-  chevron: { marginLeft: 10 },
-  termsText: { fontSize: 14, color: Colors.textLight, marginTop: 25, marginBottom: 25, lineHeight: 20 },
-  orderButton: { backgroundColor: Colors.primary, height: 67, borderRadius: 19, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.textDark },
+  
+  section: { backgroundColor: '#FFF', borderRadius: 15, padding: 15, marginBottom: 20 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  label: { fontSize: 16, color: Colors.textLight },
+  valueText: { fontSize: 16, fontWeight: '600', color: Colors.textDark },
+  totalLabel: { fontSize: 18, fontWeight: 'bold', color: Colors.textDark },
+  totalValue: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
+
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.textDark, marginBottom: 15 },
+  
+  paymentBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 15, borderRadius: 15, marginBottom: 10, borderWidth: 1, borderColor: '#FFF' },
+  paymentBoxActive: { borderColor: Colors.primary, backgroundColor: '#F0F5FF' }, 
+  iconWrapper: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  paymentLabel: { flex: 1, fontSize: 16, color: Colors.textDark, fontWeight: '500' },
+  paymentLabelActive: { fontWeight: 'bold', color: Colors.primary },
+
+  termsText: { fontSize: 13, color: Colors.textLight, marginTop: 15, marginBottom: 20, textAlign: 'center', paddingHorizontal: 10 },
+  orderButton: { backgroundColor: Colors.primary, height: 60, borderRadius: 19, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   orderButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  errorButton: { backgroundColor: '#F2F3F2', borderWidth: 1, borderColor: '#eee' }, 
+
+  processingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 30 },
+  processingTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.textDark, marginBottom: 10 },
+  processingText: { fontSize: 16, color: Colors.textLight, textAlign: 'center', marginBottom: 40 },
+  cancelBtn: { paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30, backgroundColor: '#FFEAEA' },
+  cancelBtnText: { color: '#FF4747', fontSize: 16, fontWeight: 'bold' }
 });

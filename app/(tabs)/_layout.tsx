@@ -28,7 +28,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen 
         name="favorite" 
-        options={{ title: 'Favourite', tabBarIcon: ({color}) => <Ionicons name="heart-outline" size={24} color={color} /> }} 
+        options={{ title: 'Favorite', tabBarIcon: ({color}) => <Ionicons name="heart-outline" size={24} color={color} /> }} 
       />
       <Tabs.Screen 
         name="account" 

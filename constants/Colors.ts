@@ -1,6 +1,7 @@
 export default {
-  primary: '#53B175', // Màu xanh lá củ cà rốt của Nectar
+  primary: '#2D60FF', // Xanh dương công nghệ (giống logo Dell/Samsung)
   white: '#FFFFFF',
-  textDark: '#181725', // Màu chữ đen xám
-  textLight: '#7C7C7C', // Màu chữ xám nhạt
+  textDark: '#181725',
+  textLight: '#7C7C7C',
+  background: '#F5F7FF', // Màu nền hơi xanh nhẹ cho sạch sẽ
 };

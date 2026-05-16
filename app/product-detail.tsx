@@ -1,23 +1,43 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router'; // 👉 Thêm useLocalSearchParams
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../constants/Colors';
-import { products } from '../constants/data'; // 👉 Import kho dữ liệu
+import { products } from '../constants/data';
+import { storageService } from '../services/storageService'; // 👉 Chèn thêm service để giỏ hàng hoạt động thật
+
+const formatCurrency = (priceInUSD: number) => {
+  const priceInVND = priceInUSD * 25000;
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(priceInVND);
+};
 
 export default function ProductDetailScreen() {
   const router = useRouter();
-  
-  // 👉 1. Lấy cái ID từ đường link truyền sang
   const { id } = useLocalSearchParams(); 
-
-  // 👉 2. Tìm sản phẩm trong kho data.ts có id trùng khớp
   const product = products.find(p => p.id === id);
 
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // 👉 3. BẢO VỆ CHỐNG SẬP APP: Nếu không tìm thấy sản phẩm (ví dụ truy cập lỗi), báo lỗi luôn
+  // 👉 HÀM XỬ LÝ THÊM VÀO GIỎ HÀNG THẬT
+  const handleAddToCart = async () => {
+    try {
+      let currentCart = await storageService.getCart();
+      const existingItemIndex = currentCart.findIndex((cartItem: any) => cartItem.id === product?.id);
+
+      if (existingItemIndex >= 0) {
+        currentCart[existingItemIndex].quantity += quantity;
+      } else {
+        currentCart.push({ ...product, quantity: quantity });
+      }
+
+      await storageService.saveCart(currentCart);
+      Alert.alert("Thành công", `Đã thêm ${quantity}x ${product?.name} vào giỏ hàng!`);
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể thêm vào giỏ hàng.");
+    }
+  };
+
   if (!product) {
     return (
       <SafeAreaView style={styles.container}>
@@ -40,20 +60,18 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           </View>
           
-          {/* 👉 Thay Ảnh động */}
           <Image source={product.image} style={styles.productImage} resizeMode="contain" />
         </View>
 
         <View style={styles.detailsContainer}>
           <View style={styles.titleRow}>
-            {/* 👉 Thay Tên động */}
             <Text style={styles.productTitle}>{product.name}</Text>
             <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
               <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={28} color={isFavorite ? "#F3603F" : Colors.textLight} />
             </TouchableOpacity>
           </View>
-          {/* 👉 Thay Trọng lượng động */}
-          <Text style={styles.productWeight}>{product.weight}</Text>
+          
+          <Text style={styles.productBrand}>{product.brand} Official Store</Text>
 
           <View style={styles.priceRow}>
             <View style={styles.quantityContainer}>
@@ -65,46 +83,66 @@ export default function ProductDetailScreen() {
                 <Ionicons name="add" size={24} color={Colors.primary} />
               </TouchableOpacity>
             </View>
-            {/* 👉 Thay Giá động */}
-            <Text style={styles.price}>${product.price}</Text>
+            
+            {/* 👉 ĐÃ FIX: Dùng formatCurrency chuẩn VNĐ */}
+            <Text style={styles.price}>{formatCurrency(product.price)}</Text>
           </View>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.expandableSection}>
-            <Text style={styles.sectionTitle}>Product Detail</Text>
-            <Ionicons name="chevron-down" size={24} color={Colors.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.description}>
-            Đây là mô tả chi tiết của {product.name}. Ăn rất ngon và bổ dưỡng, mua ngay kẻo lỡ!
-          </Text>
+          {/* 👉 ĐÃ FIX: Việt hóa nội dung */}
+          <View style={styles.expandableSection}>
+            <Text style={styles.sectionTitle}>Mô tả sản phẩm</Text>
+          </View>
+          <Text style={styles.description}>{product.description}</Text>
 
           <View style={styles.divider} />
-          {/* ... Các phần review, nutrition giữ nguyên ... */}
+
+          <View style={styles.expandableSection}>
+            <Text style={styles.sectionTitle}>Thông số kỹ thuật</Text>
+            <View style={styles.specBadge}><Text style={styles.specBadgeText}>Chính hãng</Text></View>
+          </View>
+          
+          <View style={styles.specsTable}>
+            <View style={styles.specRow}>
+              <Text style={styles.specLabel}>Cấu hình</Text>
+              <Text style={styles.specValue}>{product.specs}</Text>
+            </View>
+            <View style={styles.specRow}>
+              <Text style={styles.specLabel}>Danh mục</Text>
+              <Text style={styles.specValue}>{product.category}</Text>
+            </View>
+            <View style={styles.specRow}>
+              <Text style={styles.specLabel}>Bảo hành</Text>
+              <Text style={styles.specValue}>12 Tháng</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
         </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.basketButton} onPress={() => alert(`Đã thêm ${quantity} hộp ${product.name} vào giỏ!`)}>
-          <Text style={styles.basketButtonText}>Add To Basket</Text>
+        {/* 👉 ĐÃ FIX: Gọi hàm thêm giỏ hàng thật */}
+        <TouchableOpacity style={styles.basketButton} onPress={handleAddToCart}>
+          <Text style={styles.basketButtonText}>Thêm vào giỏ hàng</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// ... styles giữ nguyên không đổi ...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white, paddingTop: 40 },
   scrollContent: { paddingBottom: 100 }, 
   imageHeaderContainer: { backgroundColor: '#F2F3F2', borderBottomLeftRadius: 25, borderBottomRightRadius: 25, paddingBottom: 30, marginBottom: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10 },
   iconButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  productImage: { width: '100%', height: 200, marginTop: 20 },
+  productImage: { width: '100%', height: 250, marginTop: 20 }, 
   detailsContainer: { paddingHorizontal: 20 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   productTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.textDark, flex: 1, marginRight: 10 },
-  productWeight: { fontSize: 16, color: Colors.textLight, marginTop: 5, marginBottom: 25 },
+  productBrand: { fontSize: 16, color: Colors.primary, fontWeight: '600', marginTop: 5, marginBottom: 25 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
   quantityContainer: { flexDirection: 'row', alignItems: 'center' },
   qtyBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
@@ -114,7 +152,15 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: '#E2E2E2', marginBottom: 15 },
   expandableSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.textDark },
+  specBadge: { backgroundColor: '#E1F3E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 5 },
+  specBadgeText: { color: '#53B175', fontSize: 12, fontWeight: 'bold' },
   description: { fontSize: 14, color: Colors.textLight, lineHeight: 22, marginBottom: 15 },
+  
+  specsTable: { backgroundColor: '#F9F9F9', borderRadius: 15, padding: 15, marginBottom: 20 },
+  specRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  specLabel: { color: Colors.textLight, fontSize: 14 },
+  specValue: { color: Colors.textDark, fontSize: 14, fontWeight: '500', textAlign: 'right', flex: 1, marginLeft: 20 },
+
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 30, paddingTop: 10, backgroundColor: Colors.white },
   basketButton: { backgroundColor: Colors.primary, width: '100%', height: 67, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
   basketButtonText: { color: Colors.white, fontSize: 18, fontWeight: 'bold' }
