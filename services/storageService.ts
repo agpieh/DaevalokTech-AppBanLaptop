@@ -109,5 +109,22 @@ export const storageService = {
     } catch (e) {
       return { name: 'Người dùng', email: '' };
     }
+  },
+  // Thêm vào trong đối tượng storageService của bồ:
+async getFavorites() {
+  try {
+    const value = await AsyncStorage.getItem('FAVORITES_LIST');
+    return value ? JSON.parse(value) : [];
+  } catch (e) {
+    return [];
   }
+},
+
+async saveFavorites(favorites: any[]) {
+  try {
+    await AsyncStorage.setItem('FAVORITES_LIST', JSON.stringify(favorites));
+  } catch (e) {
+    console.error("Lỗi lưu danh sách yêu thích", e);
+  }
+}
 };

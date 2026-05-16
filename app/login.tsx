@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'; // 👉 Đã thêm Alert
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Colors from '../constants/Colors';
-import { storageService } from '../services/storageService'; // 👉 Đã thêm import storageService
+import { storageService } from '../services/storageService';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -11,31 +11,30 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // 👉 HÀM XỬ LÝ ĐĂNG NHẬP MỚI
   const handleLogin = async () => {
-    // 1. Kiểm tra không được để trống
     if (!email || !password) {
       Alert.alert('Thông báo', 'Vui lòng nhập Email và Password!');
       return;
     }
 
     try {
-      // 2. Tạo dữ liệu User giả lập để lưu (Có chứa Tên và MSSV của bạn)
+      // 👉 TỰ ĐỘNG CẮT TÊN TỪ EMAIL: Lấy phần chữ trước dấu @
+      const autoName = email.split('@')[0];
+
       const userData = {
-        name: 'Trần Đại Hiệp',
+        name: autoName, // 👈 Đã đổi thành tên động dựa theo email nhập vào
         msv: '21810310632',
         email: email,
         token: 'fake-jwt-token-123'
       };
 
-      // 3. Lưu vào AsyncStorage
-      await storageService.saveUser(userData);
+      // 👉 Đã sửa thành saveUserInfo cho đúng tên hàm trong storageService của bồ
+      await storageService.saveUserInfo(userData);
 
-      // 4. Báo thành công và chuyển trang
       Alert.alert('Thành công', `Chào mừng ${userData.name}!`, [
         { 
           text: 'OK', 
-          onPress: () => router.replace('/(tabs)') 
+          onPress: () => router.replace('/(tabs)' as any) 
         }
       ]);
 
@@ -72,14 +71,13 @@ export default function LoginScreen() {
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </TouchableOpacity>
         
-        {/* 👉 ĐÃ SỬA NÚT LOG IN ĐỂ GỌI HÀM handleLogin */}
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity>
 
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/signup')}>
+          <TouchableOpacity onPress={() => router.push('/signup' as any)}>
             <Text style={styles.signupLink}>Signup</Text>
           </TouchableOpacity>
         </View>
