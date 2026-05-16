@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router'; // 👉 Đổi sang useFocusEffect
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Colors';
 import { storageService } from '../../services/storageService';
 
-// 👉 Thêm thuộc tính onPress để nút nào cũng bấm được
 const AccountItem = ({ icon, title, onPress }: { icon: string; title: string; onPress?: () => void }) => (
   <TouchableOpacity style={styles.itemRow} onPress={onPress}>
     <View style={styles.itemLeft}>
@@ -20,11 +19,11 @@ export default function AccountScreen() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
-  // 👉 Tự động load thông tin user MỖI KHI MỞ TAB NÀY
+  // Tự động load thông tin user từ Storage khi mở màn hình
   useFocusEffect(
     useCallback(() => {
       const loadUserData = async () => {
-        const savedUser = await storageService.getUserInfo(); // Nhớ gọi đúng tên hàm này nhé
+        const savedUser = await storageService.getUserInfo();
         if (savedUser) {
           setUser(savedUser);
         }
@@ -33,6 +32,7 @@ export default function AccountScreen() {
     }, [])
   );
 
+  // 👉 HÀM ĐĂNG XUẤT THẬT 100%
   const handleLogout = () => {
     Alert.alert(
       "Đăng xuất",
@@ -43,8 +43,18 @@ export default function AccountScreen() {
           text: "Đăng xuất", 
           style: "destructive",
           onPress: async () => {
-            // Giả định bồ đăng xuất, bay thẳng ra màn Welcome/Login
-            router.replace('/login' as any); // Chỉnh lại route nếu bồ dùng tên file khác
+            try {
+              // 1. Gọi Async Storage xóa sạch thông tin User đăng nhập
+              await storageService.removeUser();
+              
+              // 2. Set lại State về null để giao diện xóa tên ngay lập tức
+              setUser(null);
+              
+              // 3. Đá thẳng người dùng ra màn Login bằng Email
+              router.replace('/login' as any);
+            } catch (error) {
+              Alert.alert("Lỗi", "Không thể đăng xuất vào lúc này!");
+            }
           }
         }
       ]
@@ -68,7 +78,7 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* List Items - Đã cắt tỉa và Việt Hóa */}
+        {/* List Items - Đã cắt tỉa gọn gàng */}
         <View style={styles.listContainer}>
           <AccountItem 
             icon="bag-check-outline" 
@@ -88,7 +98,7 @@ export default function AccountScreen() {
           <AccountItem 
             icon="information-circle-outline" 
             title="Về Daevalok Tech" 
-            onPress={() => alert('Phiên bản 1.0.0 \nĐồ án Tốt nghiệp')} 
+            onPress={() => alert('Phiên bản 1.0.0 \nĐồ án Tốt nghiệp EPU')} 
           />
         </View>
 
@@ -105,7 +115,7 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white, paddingTop: 40 },
   profileHeader: { flexDirection: 'row', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#F2F3F2' },
-  avatar: { width: 64, height: 64, borderRadius: 32 }, // Đổi borderRadius thành nửa width/height để ảnh tròn xoe
+  avatar: { width: 64, height: 64, borderRadius: 32 }, 
   profileInfo: { marginLeft: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   nameText: { fontSize: 20, fontWeight: 'bold', color: Colors.textDark, marginRight: 8 },

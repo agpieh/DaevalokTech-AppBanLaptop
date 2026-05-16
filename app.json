@@ -1,11 +1,12 @@
 {
+  
   "expo": {
-    "name": "GroceriesApp",
-    "slug": "GroceriesApp",
+    "name": "Daevalok Tech",
+    "slug": "daevaloktech-appbanlaptop",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "groceriesapp",
+    "scheme": "daevaloktech",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
