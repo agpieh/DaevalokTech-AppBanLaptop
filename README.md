@@ -16,10 +16,11 @@
 
 - **Họ và tên:** Trần Đại Hiệp
 - **Mã sinh viên:** 21810310632
+- **Phân công nhiệm vụ** Code chính, Xây dựng hệ thống, thiết kế giao diện, Hoàn thiện hệ thống, báo cáo, hoàn thiện layout, thiết kế logo, thiết kế thanh toán, thiết kế lịch sử, trang tìm kiếm, trang chủ.
 
 - **Họ và tên:** Vũ Đăng Tùng
 - **Mã sinh viên:** 21810310537
-
+- **Phân công nhiệm vụ** Tìm kiếm các nội dung, thiết kế trang chi tiết sản phẩm, trang yêu thích, báo cáo, quay demo.
 ---
 
 ## Công nghệ sử dụng
